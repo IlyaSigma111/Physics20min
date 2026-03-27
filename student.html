@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>☢️ РАДИОАКТИВНОСТЬ · тест</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0f1a 0%, #0c1a1f 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .student-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(20, 30, 35, 0.95);
+            border-radius: 32px;
+            padding: 28px;
+            border: 1px solid rgba(255, 136, 77, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .name-badge {
+            background: rgba(255, 100, 50, 0.2);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 500;
+            color: #ffaa66;
+            border: 1px solid #ff884d;
+            font-size: 1rem;
+        }
+
+        .timer {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+            color: #ff4d4d;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid #ff884d;
+            text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+        }
+
+        .progress-section {
+            margin-bottom: 24px;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            color: #88aaff;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #2a2a2e;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4d4d, #ffaa00);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .question-card {
+            background: rgba(30, 40, 45, 0.9);
+            border-radius: 28px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 136, 77, 0.3);
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: #ffffff;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+
+        .calc-block {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 3px solid #ff4d4d;
+        }
+
+        .calc-label {
+            color: #ffaa66;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .formula {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 16px;
+            border-radius: 14px;
+            color: #ffaa66;
+            border: 1px solid #ff884d;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option {
+            background: rgba(40, 50, 55, 0.9);
+            border: 1px solid #4a5a65;
+            border-radius: 18px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            border-color: #ff884d;
+            background: rgba(255, 100, 50, 0.2);
+        }
+
+        .option.selected {
+            background: linear-gradient(135deg, #ff4d4d, #ff884d);
+            border-color: #ff884d;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .nav-arrows {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-arrow {
+            width: 44px;
+            height: 44px;
+            background: rgba(40, 50, 55, 0.9);
+            border: 1px solid #ff884d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: #ffaa66;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-arrow:hover {
+            background: #ff884d;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #ff4d4d, #ff884d);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 77, 77, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .screen {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .input-field {
+            background: rgba(30, 40, 45, 0.9);
+            border: 1px solid #ff884d;
+            border-radius: 18px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            color: #ffffff;
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #ff4d4d;
+            box-shadow: 0 0 0 3px rgba(255, 77, 77, 0.2);
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #ff4d4d, #ff884d);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            width: 100%;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+
+        .code-display {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 3.5rem;
+            text-align: center;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 32px;
+            margin: 24px 0;
+            letter-spacing: 8px;
+            color: #ff4d4d;
+            border: 2px solid #ff884d;
+        }
+
+        .score-display {
+            font-size: 4.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 24px 0;
+            color: #ff4d4d;
+            text-shadow: 0 0 30px rgba(255, 77, 77, 0.5);
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 2rem;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #88aaff;
+            margin-bottom: 28px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 480px) {
+            .student-container { padding: 20px; }
+            .header { flex-direction: column; align-items: stretch; }
+            .timer { font-size: 1.8rem; text-align: center; }
+            .code-display { font-size: 2.5rem; letter-spacing: 4px; }
+            .score-display { font-size: 3.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="student-container">
+        <!-- ЭКРАН ВХОДА -->
+        <div id="screenLobby" class="screen">
+            <h1>☢️ РАДИОАКТИВНОСТЬ</h1>
+            <div class="subtitle">30 заданий · альфа, бета, гамма | 9 класс</div>
+            
+            <input type="text" id="playerName" class="input-field" placeholder="Твоё имя" maxlength="20">
+            <input type="text" id="gameCode" class="input-field" placeholder="Код теста (6 цифр)" maxlength="6" inputmode="numeric">
+            
+            <button class="action-btn" onclick="joinGame()">Войти в тест</button>
+            <div id="errorMsg" style="color: #ff6666; margin-top: 12px; text-align: center;"></div>
+        </div>
+
+        <!-- ЭКРАН ОЖИДАНИЯ -->
+        <div id="screenWait" class="screen hidden">
+            <h1>Ожидание</h1>
+            <div class="code-display" id="displayCode">000000</div>
+            <div id="playersCount" style="text-align: center; color: #88aaff;">0 учеников</div>
+        </div>
+
+        <!-- ЭКРАН ТЕСТА -->
+        <div id="screenGame" class="screen hidden">
+            <div class="header">
+                <span class="name-badge" id="displayName"></span>
+                <span class="timer" id="displayTimer">15:00</span>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-stats">
+                    <span id="answeredCount">0/30</span>
+                    <span>⚛️ 5 расчётных</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="question-card">
+                <div class="question-text" id="questionText"></div>
+                
+                <div id="calcBlock" class="calc-block hidden">
+                    <div class="calc-label">📐 Формула для расчёта</div>
+                    <div class="formula" id="formulaDisplay"></div>
+                </div>
+                
+                <div class="options" id="optionsContainer"></div>
+            </div>
+
+            <div class="navigation">
+                <div class="nav-arrows">
+                    <div class="nav-arrow" onclick="prevQuestion()">←</div>
+                    <div class="nav-arrow" onclick="nextQuestion()">→</div>
+                </div>
+                <button class="submit-btn" onclick="submitTest()">Отправить результаты</button>
+            </div>
+        </div>
+
+        <!-- ЭКРАН РЕЗУЛЬТАТА -->
+        <div id="screenResult" class="screen hidden">
+            <h1>Результат</h1>
+            <div class="score-display" id="finalScore">0</div>
+            <div class="message" id="finalMessage" style="text-align: center; color: #88aaff;"></div>
+            <button class="action-btn" style="margin-top: 32px;" onclick="exit()">Выйти</button>
+        </div>
+    </div>
+
+    <script>
+        // НОВЫЙ FIREBASE КОНФИГ
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpikK-C1J9F_QHubNpke6dmSnTwWNLR4U",
+            authDomain: "physics20min.firebaseapp.com",
+            projectId: "physics20min",
+            storageBucket: "physics20min.firebasestorage.app",
+            messagingSenderId: "594019490255",
+            appId: "1:594019490255:web:c5e2356a1f75089f861aba"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // ===== 30 ВОПРОСОВ ПО РАДИОАКТИВНОСТИ =====
+        const QUESTIONS = [
+            { id: 1, text: "Что такое радиоактивность?", options: [
+                "Способность атомов светиться",
+                "Самопроизвольный распад ядер атомов",
+                "Искусственное расщепление ядер",
+                "Химическая реакция"
+            ], correct: 1, isCalc: false },
+            
+            { id: 2, text: "Кто открыл явление радиоактивности?", options: [
+                "Мария Кюри",
+                "Эрнест Резерфорд",
+                "Антуан Беккерель",
+                "Нильс Бор"
+            ], correct: 2, isCalc: false },
+            
+            { id: 3, text: "Какое излучение имеет наибольшую проникающую способность?", options: [
+                "Альфа-излучение",
+                "Бета-излучение",
+                "Гамма-излучение",
+                "Все одинаковы"
+            ], correct: 2, isCalc: false },
+            
+            { id: 4, text: "Что такое альфа-излучение?", options: [
+                "Поток электронов",
+                "Поток ядер гелия",
+                "Электромагнитные волны",
+                "Поток нейтронов"
+            ], correct: 1, isCalc: false },
+            
+            { id: 5, text: "Что такое бета-излучение?", options: [
+                "Поток ядер гелия",
+                "Поток электронов или позитронов",
+                "Электромагнитные волны",
+                "Поток протонов"
+            ], correct: 1, isCalc: false },
+            
+            { id: 6, text: "Что такое гамма-излучение?", options: [
+                "Поток ядер гелия",
+                "Поток электронов",
+                "Электромагнитное излучение высокой энергии",
+                "Поток нейтронов"
+            ], correct: 2, isCalc: false },
+            
+            { id: 7, text: "Какое излучение отклоняется магнитным полем?", options: [
+                "Только альфа",
+                "Только бета",
+                "Альфа и бета",
+                "Гамма"
+            ], correct: 2, isCalc: false },
+            
+            { id: 8, text: "Период полураспада — это:", options: [
+                "Время полного распада вещества",
+                "Время, за которое распадается половина ядер",
+                "Время жизни одного ядра",
+                "Время образования новых ядер"
+            ], correct: 1, isCalc: false },
+            
+            { id: 9, text: "Закон радиоактивного распада описывается формулой:", options: [
+                "N = N₀·e^(-λt)",
+                "N = N₀·e^(λt)",
+                "N = N₀·t",
+                "N = N₀/λ"
+            ], correct: 0, isCalc: false },
+            
+            { id: 10, text: "Какая защита лучше всего от гамма-излучения?", options: [
+                "Тонкий слой бумаги",
+                "Свинцовая пластина",
+                "Алюминиевая фольга",
+                "Одежда"
+            ], correct: 1, isCalc: false },
+            
+            { id: 11, text: "Альфа-частица — это ядро атома:", options: [
+                "Водорода",
+                "Гелия",
+                "Лития",
+                "Урана"
+            ], correct: 1, isCalc: false },
+            
+            { id: 12, text: "При альфа-распаде заряд ядра:", options: [
+                "Увеличивается на 2",
+                "Уменьшается на 2",
+                "Увеличивается на 1",
+                "Не меняется"
+            ], correct: 1, isCalc: false },
+            
+            { id: 13, text: "При бета-распаде заряд ядра:", options: [
+                "Увеличивается на 1",
+                "Уменьшается на 1",
+                "Увеличивается на 2",
+                "Не меняется"
+            ], correct: 0, isCalc: false },
+            
+            { id: 14, text: "Что такое изотопы?", options: [
+                "Атомы с одинаковым зарядом, но разной массой",
+                "Атомы с разным зарядом",
+                "Молекулы одного вещества",
+                "Радиоактивные элементы"
+            ], correct: 0, isCalc: false },
+            
+            { id: 15, text: "Где применяется радиоактивность в медицине?", options: [
+                "Для стерилизации инструментов",
+                "Для лечения рака (лучевая терапия)",
+                "Для диагностики (ПЭТ-сканирование)",
+                "Все перечисленное"
+            ], correct: 3, isCalc: false },
+            
+            { id: 16, text: "Кто открыл полоний и радий?", options: [
+                "Эрнест Резерфорд",
+                "Мария и Пьер Кюри",
+                "Антуан Беккерель",
+                "Джеймс Чедвик"
+            ], correct: 1, isCalc: false },
+            
+            { id: 17, text: "Что такое ядерная цепная реакция?", options: [
+                "Распад одного ядра",
+                "Реакция, при которой нейтроны вызывают деление новых ядер",
+                "Синтез ядер",
+                "Химическая реакция"
+            ], correct: 1, isCalc: false },
+            
+            { id: 18, text: "Для защиты от альфа-излучения достаточно:", options: [
+                "Толстого слоя свинца",
+                "Листа бумаги или одежды",
+                "Бетонной стены",
+                "Воды"
+            ], correct: 1, isCalc: false },
+            
+            { id: 19, text: "Бета-частицы — это:", options: [
+                "Ядра гелия",
+                "Электроны или позитроны",
+                "Фотоны",
+                "Нейтроны"
+            ], correct: 1, isCalc: false },
+            
+            { id: 20, text: "Единица измерения радиоактивности:", options: [
+                "Грей (Гр)",
+                "Зиверт (Зв)",
+                "Беккерель (Бк)",
+                "Кюри (Ки)"
+            ], correct: 2, isCalc: false },
+            
+            { id: 21, text: "Что такое радиоактивный фон?", options: [
+                "Искусственное излучение",
+                "Естественное излучение окружающей среды",
+                "Излучение от телевизора",
+                "Излучение от солнца"
+            ], correct: 1, isCalc: false },
+            
+            { id: 22, text: "Какая страна первой применила ядерное оружие?", options: [
+                "СССР",
+                "США",
+                "Германия",
+                "Великобритания"
+            ], correct: 1, isCalc: false },
+            
+            { id: 23, text: "Что такое ядерный реактор?", options: [
+                "Устройство для синтеза ядер",
+                "Устройство для управляемой цепной реакции",
+                "Устройство для хранения отходов",
+                "Ускоритель частиц"
+            ], correct: 1, isCalc: false },
+            
+            { id: 24, text: "Какой элемент используется в атомных бомбах?", options: [
+                "Уран-235",
+                "Свинец",
+                "Железо",
+                "Алюминий"
+            ], correct: 0, isCalc: false },
+            
+            { id: 25, text: "Чернобыльская авария произошла в:", options: [
+                "1986 г.",
+                "1979 г.",
+                "1991 г.",
+                "2000 г."
+            ], correct: 0, isCalc: false },
+            
+            { id: 26, text: "🧮 Период полураспада цезия-137 = 30 лет. Сколько ядер останется из 1000 через 60 лет?", options: [
+                "500",
+                "250",
+                "125",
+                "750"
+            ], correct: 1, isCalc: true, formula: "N = N₀·(1/2)^(t/T)" },
+            
+            { id: 27, text: "🧮 Активность препарата 200 Бк. Сколько распадов происходит за 10 секунд?", options: [
+                "200",
+                "1000",
+                "2000",
+                "20"
+            ], correct: 2, isCalc: true, formula: "A = N/t, N = A·t" },
+            
+            { id: 28, text: "🧮 Период полураспада радона = 3.8 дня. Какая доля останется через 7.6 дня?", options: [
+                "1/2",
+                "1/4",
+                "1/8",
+                "3/4"
+            ], correct: 1, isCalc: true, formula: "Доля = (1/2)^(t/T)" },
+            
+            { id: 29, text: "🧮 Начальная масса радиоактивного вещества 80 г. Через 2 периода полураспада масса станет:", options: [
+                "40 г",
+                "20 г",
+                "10 г",
+                "5 г"
+            ], correct: 1, isCalc: true, formula: "m = m₀·(1/2)^n" },
+            
+            { id: 30, text: "🧮 Период полураспада йода-131 = 8 дней. Через сколько дней останется 25% от начального количества?", options: [
+                "8 дней",
+                "16 дней",
+                "24 дня",
+                "32 дня"
+            ], correct: 1, isCalc: true, formula: "25% = 1/4 = (1/2)^2 → 2 периода" }
+        ];
+
+        let gameId = null;
+        let playerName = '';
+        let currentQuestion = 0;
+        let answers = {};
+        let timerInterval = null;
+        let hasSubmitted = false;
+
+        window.joinGame = function() {
+            const name = document.getElementById('playerName').value.trim();
+            const code = document.getElementById('gameCode').value.trim();
+
+            if (!name) return showError('Введи имя');
+            if (!code || code.length !== 6) return showError('Код должен быть 6 цифр');
+
+            playerName = name;
+            gameId = `game_${code}`;
+
+            document.getElementById('displayName').innerText = name;
+            document.getElementById('displayCode').innerText = code;
+
+            db.ref(`games/${gameId}`).once('value', (snap) => {
+                const gameData = snap.val();
+                if (!gameData) return showError('Тест не найден');
+
+                if (gameData.status === 'finished') {
+                    return showError('Этот тест уже завершён');
+                }
+
+                db.ref(`games/${gameId}/players/${name}`).set({
+                    name: name,
+                    joinedAt: Date.now(),
+                    answers: {}
+                });
+
+                switchScreen('lobby', 'wait');
+                listenToGame();
+            }).catch(error => {
+                showError('Ошибка подключения');
+            });
+        };
+
+        function listenToGame() {
+            db.ref(`games/${gameId}`).on('value', (snap) => {
+                const data = snap.val();
+                if (!data) return;
+
+                if (data.players) {
+                    const count = Object.keys(data.players).length;
+                    document.getElementById('playersCount').innerText = count + ' учеников';
+                }
+
+                if (data.status === 'active') {
+                    switchScreen('wait', 'game');
+                    
+                    if (data.players?.[playerName]?.answers) {
+                        answers = data.players[playerName].answers;
+                    }
+                    
+                    if (data.players?.[playerName]?.submittedAt) {
+                        hasSubmitted = true;
+                        document.getElementById('submitBtn').disabled = true;
+                        document.getElementById('submitBtn').innerText = '✓ Результаты отправлены';
+                    }
+                    
+                    showQuestion(currentQuestion);
+                    updateProgress();
+                    
+                    if (data.startTime) {
+                        startTimer(data.startTime, data.timeLimit || 900);
+                    }
+                }
+
+                if (data.status === 'finished') {
+                    finishGame();
+                }
+            });
+        }
+
+        function switchScreen(from, to) {
+            document.getElementById(`screen${from.charAt(0).toUpperCase() + from.slice(1)}`).classList.add('hidden');
+            document.getElementById(`screen${to.charAt(0).toUpperCase() + to.slice(1)}`).classList.remove('hidden');
+        }
+
+        function startTimer(startTime, limit) {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const remaining = Math.max(0, limit - elapsed);
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                
+                document.getElementById('displayTimer').innerText = 
+                    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    submitTest();
+                }
+            }, 1000);
+        }
+
+        function updateProgress() {
+            const answered = Object.keys(answers).length;
+            document.getElementById('answeredCount').innerText = `${answered}/30`;
+            document.getElementById('progressFill').style.width = (answered / 30 * 100) + '%';
+        }
+
+        function showQuestion(index) {
+            const q = QUESTIONS[index];
+            document.getElementById('questionText').innerText = q.text;
+            
+            if (q.isCalc) {
+                document.getElementById('calcBlock').classList.remove('hidden');
+                document.getElementById('formulaDisplay').innerText = q.formula;
+            } else {
+                document.getElementById('calcBlock').classList.add('hidden');
+            }
+            
+            let optionsHtml = '';
+            q.options.forEach((opt, i) => {
+                const selected = answers[q.id] === i ? 'selected' : '';
+                optionsHtml += `<div class="option ${selected}" onclick="selectAnswer(${q.id}, ${i})">${opt}</div>`;
+            });
+            document.getElementById('optionsContainer').innerHTML = optionsHtml;
+        }
+
+        window.selectAnswer = (qid, opt) => {
+            if (hasSubmitted) {
+                alert('Ты уже отправил результаты. Нельзя менять ответы.');
+                return;
+            }
+            
+            answers[qid] = opt;
+            db.ref(`games/${gameId}/players/${playerName}/answers/${qid}`).set(opt);
+            
+            updateProgress();
+            
+            document.querySelectorAll('.option').forEach((el, i) => {
+                if (i === opt) el.classList.add('selected');
+                else el.classList.remove('selected');
+            });
+        };
+
+        window.prevQuestion = () => {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                showQuestion(currentQuestion);
+            }
+        };
+
+        window.nextQuestion = () => {
+            if (currentQuestion < 29) {
+                currentQuestion++;
+                showQuestion(currentQuestion);
+            }
+        };
+
+        window.submitTest = function() {
+            if (hasSubmitted) {
+                alert('Ты уже отправил результаты');
+                return;
+            }
+            
+            const answeredCount = Object.keys(answers).length;
+            if (answeredCount < 30) {
+                if (!confirm(`Ты ответил только на ${answeredCount}/30 вопросов. Всё равно отправить?`)) {
+                    return;
+                }
+            }
+            
+            let correct = 0;
+            for (let i = 1; i <= 30; i++) {
+                if (answers[i] === QUESTIONS[i-1].correct) correct++;
+            }
+            const score = Math.round(correct * 3.33);
+            
+            db.ref(`games/${gameId}/players/${playerName}`).update({
+                answers: answers,
+                score: score,
+                correct: correct,
+                submittedAt: Date.now()
+            }).then(() => {
+                hasSubmitted = true;
+                document.getElementById('submitBtn').disabled = true;
+                document.getElementById('submitBtn').innerText = '✓ Результаты отправлены';
+                alert('Результаты отправлены!');
+            }).catch(error => {
+                alert('Ошибка при отправке');
+            });
+        };
+
+        function finishGame() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            if (!hasSubmitted) {
+                let correct = 0;
+                for (let i = 1; i <= 30; i++) {
+                    if (answers[i] === QUESTIONS[i-1].correct) correct++;
+                }
+                const score = Math.round(correct * 3.33);
+                showResult(score, correct);
+            } else {
+                db.ref(`games/${gameId}/players/${playerName}`).once('value', (snap) => {
+                    const player = snap.val();
+                    showResult(player.score || 0, player.correct || 0);
+                });
+            }
+        }
+
+        function showResult(score, correct) {
+            switchScreen('game', 'result');
+            document.getElementById('finalScore').innerText = score + ' ☢️';
+            
+            let message = `Правильно: ${correct}/30 · `;
+            if (correct >= 27) message += 'Ядерный физик! 🏆';
+            else if (correct >= 24) message += 'Отлично! 🎉';
+            else if (correct >= 18) message += 'Хорошо! 📚';
+            else message += 'Изучи тему ещё раз! ⚛️';
+            
+            document.getElementById('finalMessage').innerHTML = message;
+        }
+
+        function showError(msg) {
+            document.getElementById('errorMsg').innerText = msg;
+        }
+
+        window.exit = () => {
+            location.reload();
+        };
+
+        document.getElementById('gameCode')?.addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').substring(0, 6);
+        });
+    </script>
+</body>
+</html>
